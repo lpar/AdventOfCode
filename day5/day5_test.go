@@ -15,7 +15,7 @@ func TestNice1(t *testing.T) {
 		if !Nice1(s) {
 			t.Error(s + " should be nice")
 		}
-		if !Nice1RegExp(s) {
+		if !Nice1RegExp(s) || !Nice1RegExpB(s) {
 			t.Error(s + " should be nice (regexp)")
 		}
 	}
@@ -23,7 +23,7 @@ func TestNice1(t *testing.T) {
 		if Nice1(s) {
 			t.Error(s + " should be naughty")
 		}
-		if Nice1RegExp(s) {
+		if Nice1RegExp(s) || Nice1RegExpB(s) {
 			t.Error(s + " should be naughty (regexp)")
 		}
 	}
@@ -101,6 +101,16 @@ func BenchmarkNice1RegExp(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, line := range testData {
 			_ = Nice1RegExp(line)
+		}
+	}
+}
+
+func BenchmarkNice1RegExpB(b *testing.B) {
+	testData, _ := ReadFile("input.txt")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, line := range testData {
+			_ = Nice1RegExpB(line)
 		}
 	}
 }

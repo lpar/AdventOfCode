@@ -19,13 +19,7 @@ var Prohibited = []string{"ab", "cd", "pq", "xy"}
 
 // Nice1 implements the naughty-or-nice algorithm for part 1 of day 5
 func Nice1(some string) bool {
-	// Check for the prohibited strings first
-	for _, bad := range Prohibited {
-		if strings.Contains(some, bad) {
-			return false
-		}
-	}
-	// If we pass that, count pairs and vowels
+	// Count pairs and vowels in a single linear pass
 	vowels := 0
 	doubles := 0
 	lc := '\000'
@@ -38,7 +32,16 @@ func Nice1(some string) bool {
 		}
 		lc = c
 	}
-	return vowels >= 3 && doubles >= 1
+	if vowels < 3 || doubles < 1 {
+		return false
+	}
+	// Check for the prohibited strings
+	for _, bad := range Prohibited {
+		if strings.Contains(some, bad) {
+			return false
+		}
+	}
+	return true
 }
 
 // Precompile the regular expressions for best performance
@@ -57,43 +60,66 @@ func Nice1RegExp(some string) bool {
 		Nice1Vowels.MatcherString(some, 0).Matches()
 }
 
-// Nice2 implements the naughty-or-nice algorithm for part 2 of day 5
-func Nice2(some string) bool {
-	// See if a pair occurs in two non-overlapping places.
-	gotpair := false
-	c2 := '\000'
-	for _, c1 := range some {
-		if unicode.IsLetter(c1) && unicode.IsLetter(c2) {
-			pair := string([]rune{c2, c1})
-			i1 := strings.Index(some, pair)
-			i2 := strings.LastIndex(some, pair)
-			if i1 >= 0 && i2 >= 0 && (i2-i1) > 1 {
-				gotpair = true
-				if debug {
-					fmt.Printf("Pair %s at [%d] and [%d] in %s\n", pair, i1, i2, some)
-				}
-				break
-			}
-		}
-		c2 = c1
-	}
-	if !gotpair {
+func Nice1RegExpB(some string) bool {
+	if !Nice1Pair.MatcherString(some, 0).Matches() ||
+		!Nice1Vowels.MatcherString(some, 0).Matches() {
 		return false
 	}
-	// Now check for a triplet -- two character the same with exactly one
-	// between them
+	for _, bad := range Prohibited {
+		if strings.Contains(some, bad) {
+			return false
+		}
+	}
+	return true
+}
+
+// Nice2 implements the naughty-or-nice algorithm for part 2 of day 5
+func Nice2(some string) bool {
+	gotpair := false
+	gottriplet := false
+	c2 := '\000'
 	c3 := '\000'
 	for i, c1 := range some {
-		if i < len(some) {
-			if c1 == c3 {
-				if debug {
-					fmt.Printf("Triplet %c%c%c at [%d] in %s\n", c1, c2, c3, i, some)
+
+		// Got two adjacent letters?
+		if unicode.IsLetter(c1) {
+			// If so, we can look for a pair that's also repeated somewhere else
+			// but not overlapping
+			if unicode.IsLetter(c2) {
+				// Assemble our pair as a string
+				pair := string([]rune{c2, c1})
+				// Trick: Find the first and last occurrences and see if they are
+				// non-overlapping. There may be others in the middle, but that
+				// doesn't matter.
+				i1 := strings.Index(some, pair)
+				i2 := strings.LastIndex(some, pair)
+				if i1 >= 0 && i2 >= 0 && (i2-i1) > 1 {
+					gotpair = true
+					if debug {
+						fmt.Printf("Pair %s at [%d] and [%d] in %s\n", pair, i1, i2, some)
+					}
 				}
-				return true
 			}
-			c3 = c2
-			c2 = c1
+
+			// Can only triplet detect if we have three adjacent letters
+			if unicode.IsLetter(c3) {
+				// Triplet detection
+				if c1 == c3 {
+					gottriplet = true
+					if debug {
+						fmt.Printf("Triplet %c%c%c at [%d] in %s\n", c1, c2, c3, i, some)
+					}
+				}
+			}
 		}
+
+		// Exit as soon as we fulfil both conditions
+		if gotpair && gottriplet {
+			return true
+		}
+
+		c3 = c2
+		c2 = c1
 	}
 	return false
 }
