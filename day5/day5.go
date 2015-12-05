@@ -5,14 +5,19 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"unicode"
+
+	"github.com/mathpl/golang-pkg-pcre/src/pkg/pcre"
 )
 
 const debug = false
 
+// The problem specifically says that only the unaccented vowels are allowed
 const Vowels = "aeiou"
 
 var Prohibited = []string{"ab", "cd", "pq", "xy"}
 
+// Nice1 implements the naughty-or-nice algorithm for part 1 of day 5
 func Nice1(some string) bool {
 	// Check for the prohibited strings first
 	for _, bad := range Prohibited {
@@ -28,7 +33,7 @@ func Nice1(some string) bool {
 		if strings.ContainsRune(Vowels, c) {
 			vowels++
 		}
-		if c == lc {
+		if c == lc && unicode.IsLetter(c) {
 			doubles++
 		}
 		lc = c
@@ -36,14 +41,30 @@ func Nice1(some string) bool {
 	return vowels >= 3 && doubles >= 1
 }
 
+// Precompile the regular expressions for best performance
+var Nice1Pair = pcre.MustCompile(`(*UTF8)([a-z])\1`, 0)
+var Nice1Vowels = pcre.MustCompile(`(*UTF8)(?:.*[aeiou]){3}`, 0)
+
+// Nice1RegExp also implements the naughty-or-nice algorithm for part 1 of
+// day 5, but uses Perl Compatible Regular Expressions (PCRE)
+func Nice1RegExp(some string) bool {
+	for _, bad := range Prohibited {
+		if strings.Contains(some, bad) {
+			return false
+		}
+	}
+	return Nice1Pair.MatcherString(some, 0).Matches() &&
+		Nice1Vowels.MatcherString(some, 0).Matches()
+}
+
+// Nice2 implements the naughty-or-nice algorithm for part 2 of day 5
 func Nice2(some string) bool {
 	// See if a pair occurs in two non-overlapping places.
 	gotpair := false
-	for i, _ := range some {
-		if i < len(some)-1 {
-			// Sneaky trick: Only find the first and last occurrences and check
-			// those. If there are even more occurrences between them, we don't care.
-			pair := some[i : i+2]
+	c2 := '\000'
+	for _, c1 := range some {
+		if unicode.IsLetter(c1) && unicode.IsLetter(c2) {
+			pair := string([]rune{c2, c1})
 			i1 := strings.Index(some, pair)
 			i2 := strings.LastIndex(some, pair)
 			if i1 >= 0 && i2 >= 0 && (i2-i1) > 1 {
@@ -54,13 +75,13 @@ func Nice2(some string) bool {
 				break
 			}
 		}
+		c2 = c1
 	}
 	if !gotpair {
 		return false
 	}
 	// Now check for a triplet -- two character the same with exactly one
 	// between them
-	c2 := '\000'
 	c3 := '\000'
 	for i, c1 := range some {
 		if i < len(some) {
@@ -75,6 +96,16 @@ func Nice2(some string) bool {
 		}
 	}
 	return false
+}
+
+// Again, precompile the regular expressions
+var Nice2Pair = pcre.MustCompile(`(*UTF8)([\p{L}]{2}).*\1`, 0)
+var Nice2Triple = pcre.MustCompile(`(*UTF8)([\p{L}])[\p{L}]\1`, 0)
+
+// Nice2RegExp is a PCRE implementation of Nice2
+func Nice2RegExp(some string) bool {
+	return Nice2Pair.MatcherString(some, 0).Matches() &&
+		Nice2Triple.MatcherString(some, 0).Matches()
 }
 
 func Process(fname string, round int) (nicecount int) {
