@@ -86,28 +86,31 @@ func Nice2(some string) bool {
 			// If so, we can look for a pair that's also repeated somewhere else
 			// but not overlapping
 			if unicode.IsLetter(c2) {
-				// Assemble our pair as a string
-				pair := string([]rune{c2, c1})
-				// Trick: Find the first and last occurrences and see if they are
-				// non-overlapping. There may be others in the middle, but that
-				// doesn't matter.
-				i1 := strings.Index(some, pair)
-				i2 := strings.LastIndex(some, pair)
-				if i1 >= 0 && i2 >= 0 && (i2-i1) > 1 {
-					gotpair = true
-					if debug {
-						fmt.Printf("Pair %s at [%d] and [%d] in %s\n", pair, i1, i2, some)
+				// Only pair-check if we need to
+				if !gotpair {
+					// Assemble our pair as a string
+					pair := string([]rune{c2, c1})
+					// Trick: Find the first and last occurrences and see if they are
+					// non-overlapping. There may be others in the middle, but that
+					// doesn't matter.
+					i1 := strings.Index(some, pair)
+					i2 := strings.LastIndex(some, pair)
+					if i1 >= 0 && i2 >= 0 && (i2-i1) > 1 {
+						gotpair = true
+						if debug {
+							fmt.Printf("Pair %s at [%d] and [%d] in %s\n", pair, i1, i2, some)
+						}
 					}
 				}
-			}
 
-			// Can only triplet detect if we have three adjacent letters
-			if unicode.IsLetter(c3) {
-				// Triplet detection
-				if c1 == c3 {
-					gottriplet = true
-					if debug {
-						fmt.Printf("Triplet %c%c%c at [%d] in %s\n", c1, c2, c3, i, some)
+				// Can only triplet detect if we have three adjacent letters
+				if !gottriplet && unicode.IsLetter(c3) {
+					// Triplet detection
+					if c1 == c3 {
+						gottriplet = true
+						if debug {
+							fmt.Printf("Triplet %c%c%c at [%d] in %s\n", c1, c2, c3, i, some)
+						}
 					}
 				}
 			}
