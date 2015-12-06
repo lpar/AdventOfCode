@@ -133,8 +133,8 @@ var Nice2Triple = pcre.MustCompile(`(*UTF8)([\p{L}])[\p{L}]\1`, 0)
 
 // Nice2RegExp is a PCRE implementation of Nice2
 func Nice2RegExp(some string) bool {
-	return Nice2Pair.MatcherString(some, 0).Matches() &&
-		Nice2Triple.MatcherString(some, 0).Matches()
+	return Nice2Triple.MatcherString(some, 0).Matches() &&
+		Nice2Pair.MatcherString(some, 0).Matches()
 }
 
 func Process(fname string, round int) (nicecount int) {
