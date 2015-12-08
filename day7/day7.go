@@ -1,5 +1,8 @@
 package main
 
+// Day 7 "massive overkill" solution:
+// a general purpose extensible circuit simulator.
+
 import (
 	"bufio"
 	"fmt"
@@ -19,10 +22,13 @@ var Whitespace = regexp.MustCompile(`\s+`)
 
 const Arrow = "->"
 
+// NewCircuit returns a pointer to a new initialized Circuit object.
 func NewCircuit() *Circuit {
 	return &Circuit{wires: make(map[string]uint16)}
 }
 
+// GetWire gets the value of the wire with the given id.
+// If the wire has no value yet, returns an error.
 func (c *Circuit) GetWire(id string) (uint16, error) {
 	if id == "b" && c.boverride != 0 {
 		return c.boverride, nil
@@ -34,10 +40,12 @@ func (c *Circuit) GetWire(id string) (uint16, error) {
 	return value, nil
 }
 
+// OverrideB hard-wires 'b' to a specific value.
 func (c *Circuit) OverrideB(value uint16) {
 	c.boverride = value
 }
 
+// SetWire sets the specified wire to the specified value.
 func (c *Circuit) SetWire(id string, value uint16) {
 	old, ok := c.wires[id]
 	if ok {
@@ -46,6 +54,7 @@ func (c *Circuit) SetWire(id string, value uint16) {
 	c.wires[id] = value
 }
 
+// Execute runs a single command from the program.
 func (c *Circuit) Execute(command string) error {
 	// Parse it ourselves
 	words := Whitespace.Split(command, -1)
@@ -66,6 +75,8 @@ func (c *Circuit) Execute(command string) error {
 	return err
 }
 
+// wire performs the operation of wiring the specified source expression
+// to the specified destination wire.
 func (c *Circuit) wire(src, dest string) error {
 	x, err := c.eval(src)
 	if err != nil {
@@ -78,6 +89,8 @@ func (c *Circuit) wire(src, dest string) error {
 	return nil
 }
 
+// not performs the operation of setting the destination wire to the
+// binary inverse of the specified source expression.
 func (c *Circuit) not(src, dest string) error {
 	x, err := c.eval(src)
 	if err != nil {
@@ -100,6 +113,8 @@ func (c *Circuit) eval(expr string) (uint16, error) {
 	return uint16(a), nil
 }
 
+// op performs a boolean operation on two expressions, and puts the
+// result onto the specified destination wire.
 func (c *Circuit) op(opcode, foo, bar, dest string) error {
 	fooval, err := c.eval(foo)
 	if err != nil {
@@ -135,6 +150,7 @@ func (c *Circuit) op(opcode, foo, bar, dest string) error {
 	return nil
 }
 
+// Reset clears all the wires to 'unknown value'.
 func (c *Circuit) Reset() {
 	fmt.Printf("Reset ")
 	for key, _ := range c.wires {
@@ -144,6 +160,8 @@ func (c *Circuit) Reset() {
 	fmt.Println()
 }
 
+// Run executes the supplied program until the output wire 'a' has a value,
+// and returns that value.
 func (c *Circuit) Run(program []string) uint16 {
 	for {
 		for _, instr := range program {
@@ -161,6 +179,7 @@ func (c *Circuit) Run(program []string) uint16 {
 	}
 }
 
+// Process runs the problems, using the specified input data file.
 func Process(filename string) {
 	inf, err := os.Open(filename)
 	if err != nil {
