@@ -48,7 +48,7 @@ func (c *Circuit) OverrideB(value uint16) {
 // SetWire sets the specified wire to the specified value.
 func (c *Circuit) SetWire(id string, value uint16) {
 	old, ok := c.wires[id]
-	if ok {
+	if ok && old != value {
 		fmt.Printf("%s redefined from %d to %d\n", id, old, value)
 	}
 	c.wires[id] = value
@@ -106,7 +106,7 @@ func (c *Circuit) not(src, dest string) error {
 // eval(expr) evaluates a one-word expression which is either an integer
 // or the name of a wire.
 func (c *Circuit) eval(expr string) (uint16, error) {
-	a, err := strconv.ParseInt(expr, 10, 16)
+	a, err := strconv.ParseUint(expr, 10, 16)
 	if err != nil {
 		return c.GetWire(expr)
 	}
@@ -166,9 +166,9 @@ func (c *Circuit) Run(program []string) uint16 {
 	for {
 		for _, instr := range program {
 			if c.Execute(instr) == nil {
-				if debug {
-					fmt.Println(instr)
-				}
+				fmt.Println("+ " + instr)
+			} else {
+				fmt.Println("  " + instr)
 			}
 		}
 		a, err := c.GetWire("a")
@@ -199,6 +199,7 @@ func Process(filename string) {
 
 	circuit := NewCircuit()
 	a1 := circuit.Run(code)
+	fmt.Printf("Part 1: a = %d\n", a1)
 
 	circuit.OverrideB(a1)
 	circuit.Reset()
